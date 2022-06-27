@@ -1,0 +1,16 @@
+{% extends './index.html' %} {% block content %}
+{% load static %}
+<div>
+  {% if searched %}
+  {% for deelnemer in deelnemers %}
+  <ul>
+    <li><a href="{% url 'show-deelnemer' deelnemer.id %}">{{deelnemer.first_name}} {{deelnemer.last_name}}</a></li>
+  </ul>
+  
+  {% endfor %}
+  {% endif %}
+</div>
+
+
+
+{% endblock %}

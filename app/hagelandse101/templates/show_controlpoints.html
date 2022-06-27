@@ -1,0 +1,46 @@
+{% extends './index.html' %} {% block content %}
+{% load static %}
+
+<style>
+
+  .bold{
+    font-weight: bold;
+    
+  }
+
+</style>
+  
+
+ {%for supplyPoint in routejson.supplyPoints%}
+
+ <div class="bg-info card m-2">
+    <div class="card-header">
+        <button class="btn btn-link  text-white" onclick="showSupplypointOnMap('{{supplyPoint.coordinate.latitude}}','{{ supplyPoint.coordinate.longitude}}')">{{supplyPoint.naam}}</button>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">locatie: {{supplyPoint.locatie}}<br>openingstijd: <span class="bold">{{supplyPoint.openingstijd}}</span><br> sluitingstijd: <span class="bold">{{supplyPoint.sluitingstijd}}</span></li>
+    </ul>
+  </div>
+
+{% endfor %}
+
+{% endblock  %}
+
+{% block script %}
+ 
+
+<script>
+  var btnSupplypoints = document.getElementById("btnSupplypoints")
+  btnSupplypoints.href = "/"
+  btnSupplypoints.innerHTML = "terug"
+  showSupplypointOnMap = (latitude, longitude) => {
+    $('html, body').animate({ scrollTop: 0 }, 'fast');
+    map.setView([latitude,longitude],15)
+  }
+
+
+      
+
+</script>
+
+{% endblock %}

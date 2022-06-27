@@ -1,0 +1,217 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>h101</title>
+    <link rel="stylesheet" href="{% static '/css/bootstrap.css'%}" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""
+    />
+    
+    <script src="{% static '/js/bootstrap.js'%}"></script>
+    
+    <script
+      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+      crossorigin=""
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+    <link rel="stylesheet" href="{% static '/css/h101.css'%}" />
+    
+  </head>
+  <body>
+    <div class="">
+      
+      {% block progress %}{% endblock progress %}
+      <div class="container-map row m-0" style="">
+        <div  class="col-md-9 position-fixed top-25 mapcontainer ">
+          <div
+          id="map"
+         >
+      
+      </div>
+        </div>
+        
+      
+        
+        <div class="col-md-3 offset-9" id="nav">
+          <h5><a href="/">Hagelandse 101</a></h5>
+           
+          <select id="editie" class="d-none">
+            {% for editie in edities %}
+            
+            <option >{{editie.pk}}. {{editie.name}}</option>
+            
+            {% endfor %}
+          </select>
+          <form
+            class="d-flex m-2"
+            method="POST"
+            action="{% url 'search-deelnemers' %}"
+          >
+            {% csrf_token %}
+
+            <input
+              class="form-control me-2"
+              type="search"
+              placeholder="Search Deelnemers"
+              aria-label="Search"
+              name="searched"
+            />
+            <button class="btn btn-outline-success" type="submit">
+              Search
+            </button>
+          </form>
+          <ul class="nav flex-column" id="navlist">
+            
+            <a 
+              href="/controlpoints"
+              class="btn btn-outline-success btn-block m-2"
+              id="btnSupplypoints">
+              
+              Bevoorradingsposten</a>
+            
+          </ul>
+          
+          {% block content %} {% endblock %}
+          {% block controlpoints %} {% endblock %}
+          
+        </div>
+        
+      </div>
+      <div class="banner">
+        <img  src="{% static '/Hagelandse101-Sponsorbar-2022-v2-1-scaled.jpg'%}" class="attachment-full size-full" alt="" loading="lazy" srcset="https://www.hagelandse101.be/wp-content/uploads/Hagelandse101-Sponsorbar-2022-v2-1-scaled.jpg 2560w, https://www.hagelandse101.be/wp-content/uploads/Hagelandse101-Sponsorbar-2022-v2-1-300x41.jpg 300w, https://www.hagelandse101.be/wp-content/uploads/Hagelandse101-Sponsorbar-2022-v2-1-1024x140.jpg 1024w, https://www.hagelandse101.be/wp-content/uploads/Hagelandse101-Sponsorbar-2022-v2-1-768x105.jpg 768w, https://www.hagelandse101.be/wp-content/uploads/Hagelandse101-Sponsorbar-2022-v2-1-1536x210.jpg 1536w, https://www.hagelandse101.be/wp-content/uploads/Hagelandse101-Sponsorbar-2022-v2-1-2048x280.jpg 2048w" sizes="(max-width: 2560px) 100vw, 2560px">
+      </div>
+    </div>
+
+    <script src="{% static '/js/leaflet.ajax.min.js'%}"></script>
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+    <script>   
+
+      var map = L.map('map')
+
+      var tileserver = '{{tileserver|escapejs}}'
+      var routejson = "{% static 'route.json' %}"
+
+      L.tileLayer(tileserver, {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      var response = fetch(routejson)
+          .then(response => response.json())
+          .then(data => {
+
+            //posities refreshen
+            var intervalId = window.setInterval(function(){
+              personenLayer.clearLayers();
+              track()
+   
+            }, 5000);
+
+            //route Hagelandse
+              var coordinates = data.segments.map(x => [x.coordinate1.latitude,x.coordinate1.longitude])
+              const route = L.polyline(coordinates, {color: 'blue', weight: 5, opacity: 0.5}).addTo(map)
+              map.fitBounds(route.getBounds())
+              map.options.minZoom = 11;
+               
+
+              //pois
+              const pois = data.pois.map((x) => L.marker([x.coordinate.latitude, x.coordinate.longitude])
+              .bindPopup(x.naam + x.beschrijving).openPopup()
+              .bindTooltip(x.naam).openTooltip()
+              .addTo(map))
+             
+
+              //supplypoints
+              var supplyPointIcon =  new L.icon({
+                  iconUrl: '{% static 'marker/shop.png'%}',
+                  iconAnchor: [12, 25],
+                  popupAnchor: [1, -34]
+
+              })
+              
+              var supplyPoints = data.supplyPoints.map(x => L.marker([x.coordinate.latitude, x.coordinate.longitude], {icon: supplyPointIcon})
+              .bindPopup(x.naam + x.beschrijving).openPopup()
+              .bindTooltip(x.naam).openTooltip()
+              .addTo(map))
+
+
+            })
+          
+
+            
+            var personenLayer = L.layerGroup()
+            map.addLayer(personenLayer)
+           
+  
+            var personIcon = new L.icon({
+             iconUrl: '{% static 'marker/hiking.png'%}',
+             iconAnchor: [12, 25],
+             popupAnchor: [1, -34]
+           
+           })
+  
+             track = () => {
+               $.ajax({
+                 url: '/tracking',
+                 dataType: 'json',
+                 success: function (data){
+                   var posities = data.posities
+                   var personen = JSON.parse(data["personen"])
+                   
+                   personen.map((x,i) => {
+                     if (posities[i] != undefined){
+                      var marker = L.marker([posities[i][0],posities[i][1]], {icon:personIcon, zIndexOffset:100})
+                      .bindTooltip("" + x['fields'].first_name + " " + x['fields'].last_name + "<br> afstand " + posities[i][2])
+                      .addTo(personenLayer)
+                     }
+                     
+                     
+                     
+                      
+                   })
+                   personenLayer.addTo(map)
+                 }
+               })
+             }
+             editie = document.getElementById("editie")
+             editie.onchange = () =>{
+               data = editie.value[0]
+               $.post('/update_editie/', function(data) {
+                alert(data);
+            });
+             }
+          
+           track()
+          
+
+         //route Meerdaal
+         var response = fetch("{% static 'route_meerdaal[4091].json' %}")
+          .then(response => response.json())
+          .then(data => {
+            
+            var coordinates = data.segments.map(x => [x.coordinate1.latitude,x.coordinate1.longitude])
+            const route_meerdaal = L.polyline(coordinates, {color: 'blue', weight: 5, opacity: 0.5}).addTo(map)
+            var pois_meerdaal = data.pois.map(x => L.marker([x.coordinate.latitude, x.coordinate.longitude])
+            .bindPopup(x.naam + "<br>" + x.beschrijving)
+            .addTo(map))
+            
+            
+          })
+
+
+          
+         
+    </script>
+
+    
+
+    {% block script %} {% endblock %}
+  </body>
+</html>

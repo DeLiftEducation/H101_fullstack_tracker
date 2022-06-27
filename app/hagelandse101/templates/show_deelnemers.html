@@ -1,0 +1,176 @@
+
+{% extends 'index.html' %} {% block content %}
+{% load static %}
+
+<style>
+  
+
+  .bar {
+    background-color: lightgreen;
+    height: 5px;
+    z-index:1;
+    
+  }
+  
+  
+
+</style>
+
+{% for person in personen %}
+<div>
+ 
+  
+  <div class="card m-2">
+    <div class="card-header">
+        
+        <button class="btn btn-link btn-person" id="btn" value="{{person.id}}">{{person.first_name}} {{person.last_name}}</button>
+        <button class="btn btn-link float-end btn_delete" id="btnverwijder">Verwijder</button>
+    </div>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item" id="distance{{person.id}}">
+        <div class="bar">.</div>
+
+      </li>
+      <li class="list-group-item" id="distanceSupplyPoint{{person.id}}">
+        
+
+      </li>
+      <li class="list-group-item">
+        Gemiddelde snelheid
+
+      </li>
+      
+      
+    </ul>
+  </div>
+
+  
+  
+</div>
+{% endfor %}
+{% endblock content %}
+
+{% block progress %}
+
+<div id="myProgress">
+  <div class="bar" id="mapBar" style="text-align:center; position:fixed;"></div>
+</div>
+{% endblock progress %}
+
+
+{% block script %}
+ 
+
+<script>
+
+  
+ 
+
+distance = () => {
+
+
+  $.ajax({
+    url: '/tracking',
+    dataType: 'json',
+    success: function (data){
+      var posities = data.posities
+      var personen = JSON.parse(data["personen"])
+      var controlpoints = fetch("{% static 'route.json' %}")
+      .then(response => response.json())
+      .then(data => {
+        return data.supplyPoints
+      })
+      
+      
+      
+      personen.map((x,i) => {
+        
+        
+       
+        var distance = document.getElementById("distance" + x.pk);
+        var bar = distance.children[0];
+        
+        var distanceSupplyPoint  = document.getElementById("distanceSupplyPoint" + x.pk);
+        /*distance.parentNode.parentNode.style.width = 50 + "%"*/
+        width = (posities[i][2] / 101000) * 100
+        distancekm = Math.round(width * 10) / 10
+        bar.style.width = distancekm + "%"
+        distance.innerHTML += "Afstand: " + distancekm + "km"
+        
+        
+
+        controlpoints.then((c) =>{
+           
+          Object.entries(c).every((entry) => {
+            const [key, value] = entry;
+            afstand = value.afstand / 1000
+            if(afstand > (posities[i][2] / 101000) * 100){
+              afstandSupplypoint = afstand - (posities[i][2] / 101000) * 100
+              distanceSupplyPoint.innerHTML += "Volgend supplypoint: " + value.naam + " " + "<br>" + Math.round(afstandSupplypoint *10) /10 + "km"
+              return false;
+            }
+            return true;
+            
+          });
+
+        })
+
+
+
+
+
+
+      })
+  }
+})
+}     
+distance()
+
+  $(".btn-person").click(function () {
+    var person_id = $(this).val();
+
+    $.ajax({ 
+      url: '/deelnemers/validate_persoon/',
+      data: {
+        'person_id': person_id
+      },
+      dataType: 'json',
+      success: function (data) {
+        var person = JSON.parse(data["person"]);
+        var fields = person[0]["fields"];
+        
+        map.setView(data.positie, 14)
+       
+        
+        }
+      
+    });
+
+
+  });
+
+  $(".btn_delete").click(function () {
+    var person_id = $(this).val();
+
+    $.ajax({ 
+      url: '/deelnemers/delete_persoon/',
+      data: {
+        'person_id': person_id
+      },
+      dataType: 'json',
+      success: function (data) {
+        
+        
+        }
+      
+    });
+
+
+  });
+  
+  
+  
+  
+</script>
+
+{% endblock %}
