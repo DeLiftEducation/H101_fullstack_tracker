@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  web:
+    build: ./app
+    command: gunicorn djangosite.wsgi:application --bind 0.0.0.0:8101
+    volumes:
+      - ./app/:/usr/src/app/
+    ports:
+      - 8101:8101
+    env_file:
+      - .env
